@@ -1,1 +1,4 @@
 project_id = "nnvgqevgmktionkowqnj"
+
+[functions.woocommerce]
+verify_jwt = false

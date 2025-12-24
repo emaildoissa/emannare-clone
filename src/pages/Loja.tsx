@@ -2,115 +2,43 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import { WooProduct } from "@/services/woocommerce";
+import { WooProduct, wooCommerce } from "@/services/woocommerce";
 import { Search, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Helmet } from "react-helmet-async";
-
-// Mock products for demonstration (replace with real WooCommerce data)
-const mockProducts: WooProduct[] = [
-  {
-    id: 1,
-    name: "Kit Florais de Bach - Emergência",
-    slug: "kit-florais-emergencia",
-    permalink: "",
-    price: "89.90",
-    regular_price: "99.90",
-    sale_price: "89.90",
-    description: "Kit completo com florais de Bach para situações de emergência.",
-    short_description: "Kit emergencial com florais selecionados.",
-    images: [{ id: 1, src: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400", alt: "Florais de Bach" }],
-    categories: [{ id: 1, name: "Florais", slug: "florais" }],
-    stock_status: "instock",
-    stock_quantity: 10,
-    attributes: [],
-  },
-  {
-    id: 2,
-    name: "Óleo Essencial de Lavanda",
-    slug: "oleo-essencial-lavanda",
-    permalink: "",
-    price: "45.00",
-    regular_price: "45.00",
-    sale_price: "",
-    description: "Óleo essencial puro de lavanda para aromaterapia.",
-    short_description: "Óleo essencial 100% puro.",
-    images: [{ id: 2, src: "https://images.unsplash.com/photo-1595981234058-a9302fb97229?w=400", alt: "Óleo de Lavanda" }],
-    categories: [{ id: 2, name: "Óleos Essenciais", slug: "oleos-essenciais" }],
-    stock_status: "instock",
-    stock_quantity: 25,
-    attributes: [],
-  },
-  {
-    id: 3,
-    name: "Chá de Ervas Relaxante",
-    slug: "cha-ervas-relaxante",
-    permalink: "",
-    price: "32.00",
-    regular_price: "32.00",
-    sale_price: "",
-    description: "Blend especial de ervas para relaxamento e bem-estar.",
-    short_description: "Chá relaxante com ervas naturais.",
-    images: [{ id: 3, src: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=400", alt: "Chá de Ervas" }],
-    categories: [{ id: 3, name: "Chás", slug: "chas" }],
-    stock_status: "instock",
-    stock_quantity: 50,
-    attributes: [],
-  },
-  {
-    id: 4,
-    name: "Incenso Natural Sândalo",
-    slug: "incenso-sandalo",
-    permalink: "",
-    price: "18.00",
-    regular_price: "18.00",
-    sale_price: "",
-    description: "Incenso natural de sândalo para meditação.",
-    short_description: "Incenso 100% natural.",
-    images: [{ id: 4, src: "https://images.unsplash.com/photo-1582126892906-5ba118eaf46e?w=400", alt: "Incenso" }],
-    categories: [{ id: 4, name: "Incensos", slug: "incensos" }],
-    stock_status: "instock",
-    stock_quantity: 100,
-    attributes: [],
-  },
-  {
-    id: 5,
-    name: "Cristal Ametista Polida",
-    slug: "cristal-ametista",
-    permalink: "",
-    price: "65.00",
-    regular_price: "75.00",
-    sale_price: "65.00",
-    description: "Ametista polida para equilíbrio energético.",
-    short_description: "Cristal de ametista natural.",
-    images: [{ id: 5, src: "https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?w=400", alt: "Ametista" }],
-    categories: [{ id: 5, name: "Cristais", slug: "cristais" }],
-    stock_status: "instock",
-    stock_quantity: 15,
-    attributes: [],
-  },
-  {
-    id: 6,
-    name: "Vela Aromática Eucalipto",
-    slug: "vela-aromatica-eucalipto",
-    permalink: "",
-    price: "42.00",
-    regular_price: "42.00",
-    sale_price: "",
-    description: "Vela aromática de eucalipto para purificação do ambiente.",
-    short_description: "Vela natural aromática.",
-    images: [{ id: 6, src: "https://images.unsplash.com/photo-1602607234591-49b3db9b1f61?w=400", alt: "Vela Aromática" }],
-    categories: [{ id: 6, name: "Velas", slug: "velas" }],
-    stock_status: "instock",
-    stock_quantity: 30,
-    attributes: [],
-  },
-];
+import { useToast } from "@/hooks/use-toast";
 
 const Loja = () => {
-  const [products, setProducts] = useState<WooProduct[]>(mockProducts);
+  const [products, setProducts] = useState<WooProduct[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const fetchedProducts = await wooCommerce.getProducts({ per_page: 50 });
+        setProducts(fetchedProducts);
+        console.log(`Loaded ${fetchedProducts.length} products from WooCommerce`);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar produtos';
+        console.error('Error loading products:', errorMessage);
+        setError(errorMessage);
+        toast({
+          title: "Erro ao carregar produtos",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, [toast]);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -159,8 +87,19 @@ const Loja = () => {
         <section className="py-16">
           <div className="container mx-auto px-4">
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4" />
+                <p className="font-body text-muted-foreground">Carregando produtos...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-20">
+                <ShoppingBag className="w-16 h-16 text-destructive/50 mx-auto mb-4" />
+                <h3 className="font-display text-xl text-foreground mb-2">
+                  Erro ao carregar produtos
+                </h3>
+                <p className="font-body text-muted-foreground">
+                  {error}
+                </p>
               </div>
             ) : filteredProducts.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
