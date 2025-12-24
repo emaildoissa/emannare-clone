@@ -42,13 +42,34 @@ serve(async (req) => {
       body: body ? JSON.stringify(body) : undefined,
     });
 
+    let responseText = await response.text();
+    console.log(`WooCommerce raw response (first 500 chars): ${responseText.substring(0, 500)}`);
+    
+    // Some hosts wrap JSON in HTML tags, extract the JSON
+    const jsonMatch = responseText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (jsonMatch) {
+      responseText = jsonMatch[0];
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error(`Failed to parse response as JSON: ${responseText.substring(0, 200)}`);
+      throw new Error(`Invalid JSON response from WooCommerce API`);
+    }
+
+    // Check for WooCommerce API errors
+    if (data.code && data.message) {
+      console.error(`WooCommerce API error: ${data.code} - ${data.message}`);
+      throw new Error(`WooCommerce: ${data.message}`);
+    }
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`WooCommerce API error: ${response.status} - ${errorText}`);
+      console.error(`WooCommerce API error: ${response.status}`);
       throw new Error(`WooCommerce API error: ${response.status} - ${response.statusText}`);
     }
 
-    const data = await response.json();
     console.log(`WooCommerce API response received, items: ${Array.isArray(data) ? data.length : 'object'}`);
 
     return new Response(JSON.stringify(data), {
