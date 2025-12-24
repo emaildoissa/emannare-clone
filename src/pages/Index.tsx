@@ -1,13 +1,32 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Header from "@/components/Header";
+import Hero from "@/components/Hero";
+import TherapiesSection from "@/components/TherapiesSection";
+import TeamSection from "@/components/TeamSection";
+import BlogSection from "@/components/BlogSection";
+import Footer from "@/components/Footer";
+import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <Helmet>
+        <title>Emannare - Núcleo de Terapias Integrativas e Complementares</title>
+        <meta 
+          name="description" 
+          content="Harmonizando energias e restaurando a saúde e o bem-estar através de terapias integrativas como Acupuntura, Auriculoterapia, Dietoterapia e mais." 
+        />
+        <meta name="keywords" content="terapias integrativas, acupuntura, medicina chinesa, bem-estar, saúde, Porto Alegre" />
+      </Helmet>
+      
+      <Header />
+      <main>
+        <Hero />
+        <TherapiesSection />
+        <TeamSection />
+        <BlogSection />
+      </main>
+      <Footer />
+    </>
   );
 };
 
