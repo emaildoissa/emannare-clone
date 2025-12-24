@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const wooUrl = Deno.env.get('WOOCOMMERCE_URL');
+const wooUrlRaw = Deno.env.get('WOOCOMMERCE_URL');
+const wooUrl = wooUrlRaw?.replace(/\/+$/, ''); // Remove trailing slashes
 const consumerKey = Deno.env.get('WOOCOMMERCE_CONSUMER_KEY');
 const consumerSecret = Deno.env.get('WOOCOMMERCE_CONSUMER_SECRET');
 
