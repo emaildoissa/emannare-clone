@@ -1,11 +1,5 @@
-// WooCommerce API Service
-// Configure with your WooCommerce credentials
-
-export interface WooCommerceConfig {
-  url: string;
-  consumerKey: string;
-  consumerSecret: string;
-}
+// WooCommerce API Service via Edge Function
+import { supabase } from "@/integrations/supabase/client";
 
 export interface WooProduct {
   id: number;
@@ -53,34 +47,24 @@ export interface CartItem {
 }
 
 class WooCommerceService {
-  private config: WooCommerceConfig | null = null;
-
-  configure(config: WooCommerceConfig) {
-    this.config = config;
-  }
-
-  private getAuthHeader(): string {
-    if (!this.config) throw new Error("WooCommerce not configured");
-    return btoa(`${this.config.consumerKey}:${this.config.consumerSecret}`);
-  }
-
-  private async fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    if (!this.config) throw new Error("WooCommerce not configured");
-
-    const response = await fetch(`${this.config.url}/wp-json/wc/v3${endpoint}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${this.getAuthHeader()}`,
-        ...options.headers,
-      },
+  private async callApi<T>(endpoint: string, method: string = 'GET', body?: unknown): Promise<T> {
+    console.log(`Calling WooCommerce API: ${method} ${endpoint}`);
+    
+    const { data, error } = await supabase.functions.invoke('woocommerce', {
+      body: { endpoint, method, body },
     });
 
-    if (!response.ok) {
-      throw new Error(`WooCommerce API error: ${response.statusText}`);
+    if (error) {
+      console.error('WooCommerce API error:', error);
+      throw new Error(`WooCommerce API error: ${error.message}`);
     }
 
-    return response.json();
+    if (data?.error) {
+      console.error('WooCommerce API returned error:', data.error);
+      throw new Error(data.error);
+    }
+
+    return data as T;
   }
 
   async getProducts(params?: {
@@ -96,20 +80,20 @@ class WooCommerceService {
     if (params?.search) searchParams.set("search", params.search);
 
     const query = searchParams.toString();
-    return this.fetchApi<WooProduct[]>(`/products${query ? `?${query}` : ""}`);
+    return this.callApi<WooProduct[]>(`/products${query ? `?${query}` : ""}`);
   }
 
   async getProduct(id: number): Promise<WooProduct> {
-    return this.fetchApi<WooProduct>(`/products/${id}`);
+    return this.callApi<WooProduct>(`/products/${id}`);
   }
 
   async getProductBySlug(slug: string): Promise<WooProduct | null> {
-    const products = await this.fetchApi<WooProduct[]>(`/products?slug=${slug}`);
+    const products = await this.callApi<WooProduct[]>(`/products?slug=${slug}`);
     return products[0] || null;
   }
 
   async getCategories(): Promise<WooCategory[]> {
-    return this.fetchApi<WooCategory[]>("/products/categories");
+    return this.callApi<WooCategory[]>("/products/categories");
   }
 
   async createOrder(orderData: {
@@ -121,10 +105,7 @@ class WooCommerceService {
       phone: string;
     };
   }) {
-    return this.fetchApi("/orders", {
-      method: "POST",
-      body: JSON.stringify(orderData),
-    });
+    return this.callApi("/orders", "POST", orderData);
   }
 }
 
