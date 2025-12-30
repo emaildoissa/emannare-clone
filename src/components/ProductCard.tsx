@@ -11,7 +11,18 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
-  const mainImage = product.images[0]?.src || "/placeholder.svg";
+  
+  // Transform localhost URLs to use ngrok for development
+  const transformImageUrl = (url: string) => {
+    if (!url) return "/placeholder.svg";
+    // Replace localhost:8000 with the ngrok URL (development only)
+    const ngrokUrl = "https://0a30aa5eac4e.ngrok-free.app";
+    return url
+      .replace(/https?:\/\/localhost:8000/g, ngrokUrl)
+      .replace(/http:\/\/localhost:8000/g, ngrokUrl);
+  };
+  
+  const mainImage = transformImageUrl(product.images[0]?.src) || "/placeholder.svg";
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
